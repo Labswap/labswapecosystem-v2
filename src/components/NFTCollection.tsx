@@ -5,22 +5,22 @@ const NFTCollection = () => {
     {
       id: "501",
       name: "LabScientist DAO #501",
-      image: "public/LABScientist_501.png"
+      image: "/LABScientist_501.png"
     },
     {
       id: "507", 
       name: "LabScientist DAO #507",
-      image: "public/LABScientist_507.png"
+      image: "/LABScientist_507.png"
     },
     {
       id: "514",
       name: "LabScientist DAO #514", 
-      image: "public/LABScientist_514.png"
+      image: "/LABScientist_514.png"
     },
     {
       id: "375",
       name: "LabScientist DAO #375",
-      image: "public/LABScientist_375.png"
+      image: "/LABScientist_375.png"
     }
   ];
 
