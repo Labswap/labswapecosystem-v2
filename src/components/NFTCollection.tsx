@@ -3,22 +3,22 @@ import React from 'react';
 const NFTCollection = () => {
   const nfts = [
     {
-      id: "001",
+      id: "501",
       name: "LABScientist DAO #501",
       image: "public/imagen_0.png"
     },
     {
-      id: "002", 
+      id: "507", 
       name: "LABScientist DAO #507",
       image: "public/imagen_3.png"
     },
     {
-      id: "003",
+      id: "514",
       name: "LABScientist DAO #514", 
       image: "public/imagen_5.png"
     },
     {
-      id: "004",
+      id: "375",
       name: "LABScientist DAO #375",
       image: "public/imagen_10.png"
     }
