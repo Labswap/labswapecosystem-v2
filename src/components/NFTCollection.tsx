@@ -4,22 +4,22 @@ const NFTCollection = () => {
   const nfts = [
     {
       id: "001",
-      name: "LABScientist #001",
+      name: "LABScientist DAO #501",
       image: "public/imagen_0.png"
     },
     {
       id: "002", 
-      name: "Scientist #002",
+      name: "LABScientist DAO #507",
       image: "public/imagen_3.png"
     },
     {
       id: "003",
-      name: "Scientist #003", 
+      name: "LABScientist DAO #514", 
       image: "public/imagen_5.png"
     },
     {
       id: "004",
-      name: "Scientist #004",
+      name: "LABScientist DAO #375",
       image: "public/imagen_10.png"
     }
   ];
