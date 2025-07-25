@@ -8,7 +8,7 @@ const MarketingSolutions = () => {
     email: '',
     company: '',
     message: '',
-    services: []
+    services: [] as string[]
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState('');
@@ -26,6 +26,7 @@ const MarketingSolutions = () => {
   ];
 
   const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -33,7 +34,7 @@ const MarketingSolutions = () => {
     }));
   };
 
-  const handleServiceToggle = (service) => {
+  const handleServiceToggle = (service: string) => {
     setFormData(prev => ({
       ...prev,
       services: prev.services.includes(service)
@@ -42,7 +43,7 @@ const MarketingSolutions = () => {
     }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     
