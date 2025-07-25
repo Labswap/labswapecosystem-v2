@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
 import { TrendingUp, Plus, Minus } from 'lucide-react';
+import { useContracts } from '../hooks/useContracts';
 
 const Farms: React.FC = () => {
+  const { contracts, isReady } = useContracts();
   const [activeTab, setActiveTab] = useState<'live' | 'finished'>('live');
+  const [stakingAmounts, setStakingAmounts] = useState<{ [key: string]: string }>({});
+  const [isLoading, setIsLoading] = useState<{ [key: string]: boolean }>({});
 
   const farms = [
     {
@@ -44,6 +48,64 @@ const Farms: React.FC = () => {
   const finishedFarms = farms.filter(farm => !farm.isActive);
 
   const displayFarms = activeTab === 'live' ? activeFarms : finishedFarms;
+
+  const handleStake = async (farmId: string, pid: number) => {
+    if (!contracts || !isReady) return;
+    
+    const amount = stakingAmounts[farmId];
+    if (!amount) return;
+
+    try {
+      setIsLoading(prev => ({ ...prev, [farmId]: true }));
+      
+      const amountWei = contracts.toWei(amount);
+      await contracts.depositToFarm(pid, amountWei);
+      
+      setStakingAmounts(prev => ({ ...prev, [farmId]: '' }));
+      alert('Staking successful!');
+    } catch (error) {
+      console.error('Staking failed:', error);
+      alert('Staking failed. Please try again.');
+    } finally {
+      setIsLoading(prev => ({ ...prev, [farmId]: false }));
+    }
+  };
+
+  const handleUnstake = async (farmId: string, pid: number) => {
+    if (!contracts || !isReady) return;
+
+    try {
+      setIsLoading(prev => ({ ...prev, [farmId]: true }));
+      
+      // Get user info to withdraw all staked amount
+      const userInfo = await contracts.getUserInfo(pid);
+      await contracts.withdrawFromFarm(pid, userInfo.amount);
+      
+      alert('Unstaking successful!');
+    } catch (error) {
+      console.error('Unstaking failed:', error);
+      alert('Unstaking failed. Please try again.');
+    } finally {
+      setIsLoading(prev => ({ ...prev, [farmId]: false }));
+    }
+  };
+
+  const handleHarvest = async (farmId: string, pid: number) => {
+    if (!contracts || !isReady) return;
+
+    try {
+      setIsLoading(prev => ({ ...prev, [farmId]: true }));
+      
+      await contracts.harvestFarm(pid);
+      
+      alert('Harvest successful!');
+    } catch (error) {
+      console.error('Harvest failed:', error);
+      alert('Harvest failed. Please try again.');
+    } finally {
+      setIsLoading(prev => ({ ...prev, [farmId]: false }));
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 py-8">
@@ -157,19 +219,26 @@ const Farms: React.FC = () => {
                   <p className="text-gray-400 text-sm">FLASK Earned</p>
                   <p className="text-white font-semibold">{farm.earned}</p>
                   <button className="text-blue-400 hover:text-blue-300 text-sm transition-colors">
-                    Harvest
+                    onClick={() => handleHarvest(farm.id, parseInt(farm.id) - 1)}
+                    disabled={!isReady || isLoading[farm.id]}
+                  >
+                    {isLoading[farm.id] ? 'Harvesting...' : 'Harvest'}
                   </button>
                 </div>
 
                 {/* Actions */}
                 <div className="flex gap-2">
                   <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2">
+                    onClick={() => handleStake(farm.id, parseInt(farm.id) - 1)}
+                    disabled={!isReady || isLoading[farm.id]}
                     <Plus size={16} />
-                    Stake
+                    {isLoading[farm.id] ? 'Staking...' : 'Stake'}
                   </button>
+                    onClick={() => handleUnstake(farm.id, parseInt(farm.id) - 1)}
+                    disabled={!isReady || isLoading[farm.id]}
                   <button className="bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2">
                     <Minus size={16} />
-                    Unstake
+                    {isLoading[farm.id] ? 'Unstaking...' : 'Unstake'}
                   </button>
                 </div>
               </div>

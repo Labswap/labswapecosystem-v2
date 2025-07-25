@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { Lock, Unlock, TrendingUp } from 'lucide-react';
+import { useContracts } from '../hooks/useContracts';
 
 const Staking: React.FC = () => {
+  const { contracts, isReady } = useContracts();
   const [activePool, setActivePool] = useState<string | null>(null);
   const [stakeAmount, setStakeAmount] = useState('');
+  const [isLoading, setIsLoading] = useState<{ [key: string]: boolean }>({});
 
   const stakingPools = [
     {
@@ -44,18 +47,74 @@ const Staking: React.FC = () => {
     },
   ];
 
-  const handleStake = (poolId: string) => {
-    console.log('Staking', stakeAmount, 'in pool', poolId);
-    setStakeAmount('');
-    setActivePool(null);
+  const handleStake = async (poolId: string) => {
+    if (!contracts || !isReady || !stakeAmount) return;
+
+    try {
+      setIsLoading(prev => ({ ...prev, [poolId]: true }));
+      
+      const amountWei = contracts.toWei(stakeAmount);
+      
+      // For FLASK staking (Syrup Bar)
+      if (poolId === '1' || poolId === '2') {
+        await contracts.enterStaking(amountWei);
+      } else {
+        // For other staking pools (Vault)
+        await contracts.depositToVault(amountWei);
+      }
+      
+      setStakeAmount('');
+      setActivePool(null);
+      alert('Staking successful!');
+    } catch (error) {
+      console.error('Staking failed:', error);
+      alert('Staking failed. Please try again.');
+    } finally {
+      setIsLoading(prev => ({ ...prev, [poolId]: false }));
+    }
   };
 
-  const handleUnstake = (poolId: string) => {
-    console.log('Unstaking from pool', poolId);
+  const handleUnstake = async (poolId: string) => {
+    if (!contracts || !isReady) return;
+
+    try {
+      setIsLoading(prev => ({ ...prev, [poolId]: true }));
+      
+      // For FLASK staking (Syrup Bar)
+      if (poolId === '1' || poolId === '2') {
+        const balance = await contracts.getStakingBalance();
+        await contracts.leaveStaking(balance);
+      } else {
+        // For other staking pools (Vault)
+        const balance = await contracts.getVaultBalance();
+        await contracts.withdrawFromVault(balance);
+      }
+      
+      alert('Unstaking successful!');
+    } catch (error) {
+      console.error('Unstaking failed:', error);
+      alert('Unstaking failed. Please try again.');
+    } finally {
+      setIsLoading(prev => ({ ...prev, [poolId]: false }));
+    }
   };
 
-  const handleHarvest = (poolId: string) => {
-    console.log('Harvesting rewards from pool', poolId);
+  const handleHarvest = async (poolId: string) => {
+    if (!contracts || !isReady) return;
+
+    try {
+      setIsLoading(prev => ({ ...prev, [poolId]: true }));
+      
+      // Harvest by staking 0 amount
+      await contracts.enterStaking('0');
+      
+      alert('Harvest successful!');
+    } catch (error) {
+      console.error('Harvest failed:', error);
+      alert('Harvest failed. Please try again.');
+    } finally {
+      setIsLoading(prev => ({ ...prev, [poolId]: false }));
+    }
   };
 
   return (
@@ -152,21 +211,24 @@ const Staking: React.FC = () => {
                   <div className="flex gap-2">
                     <button
                       onClick={() => setActivePool(activePool === pool.id ? null : pool.id)}
+                      disabled={!isReady}
                       className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                     >
-                      Stake
+                      {!isReady ? 'Connect Wallet' : 'Stake'}
                     </button>
                     <button
                       onClick={() => handleUnstake(pool.id)}
+                      disabled={!isReady || isLoading[pool.id]}
                       className="bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                     >
-                      Unstake
+                      {isLoading[pool.id] ? 'Unstaking...' : 'Unstake'}
                     </button>
                     <button
                       onClick={() => handleHarvest(pool.id)}
+                      disabled={!isReady || isLoading[pool.id]}
                       className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                     >
-                      Harvest
+                      {isLoading[pool.id] ? 'Harvesting...' : 'Harvest'}
                     </button>
                   </div>
                 </div>
@@ -196,10 +258,10 @@ const Staking: React.FC = () => {
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleStake(pool.id)}
-                        disabled={!stakeAmount}
+                        disabled={!stakeAmount || !isReady || isLoading[pool.id]}
                         className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white py-3 rounded-lg font-semibold transition-colors"
                       >
-                        Confirm Stake
+                        {isLoading[pool.id] ? 'Staking...' : 'Confirm Stake'}
                       </button>
                       <button
                         onClick={() => setActivePool(null)}

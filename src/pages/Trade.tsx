@@ -1,17 +1,22 @@
 import React, { useState } from 'react';
 import { ArrowDownUp, Settings, Info } from 'lucide-react';
 import { Token } from '../types';
+import { useContracts } from '../hooks/useContracts';
+import { CONTRACT_ADDRESSES } from '../contracts/addresses';
 
 const Trade: React.FC = () => {
+  const { contracts, isReady } = useContracts();
+  const [isSwapping, setIsSwapping] = useState(false);
+  
   const [fromToken, setFromToken] = useState<Token>({
-    address: '0x0000000000000000000000000000000000000000',
+    address: CONTRACT_ADDRESSES.WBNB,
     symbol: 'BNB',
     name: 'Binance Coin',
     decimals: 18,
   });
   
   const [toToken, setToToken] = useState<Token>({
-    address: '0x15d46b30207991425dca153d91eecaa746d57eb1',
+    address: CONTRACT_ADDRESSES.FLASK_TOKEN,
     symbol: 'FLASK',
     name: 'Blue Flask V2',
     decimals: 18,
@@ -22,11 +27,10 @@ const Trade: React.FC = () => {
   const [slippage, setSlippage] = useState('0.5');
 
   const commonTokens = [
-    { symbol: 'BNB', name: 'Binance Coin', address: '0x0000000000000000000000000000000000000000' },
-    { symbol: 'BUSD', name: 'Binance USD', address: '0xe9e7cea3dedca5984780bafc599bd69add087d56' },
-    { symbol: 'USDT', name: 'Tether USD', address: '0x55d398326f99059ff775485246999027b3197955' },
-    { symbol: 'CAKE', name: 'PancakeSwap Token', address: '0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82' },
-    { symbol: 'FLASK', name: 'Blue Flask V2', address: '0x15d46b30207991425dca153d91eecaa746d57eb1' },
+    { symbol: 'BNB', name: 'Binance Coin', address: CONTRACT_ADDRESSES.WBNB },
+    { symbol: 'BUSD', name: 'Binance USD', address: CONTRACT_ADDRESSES.BUSD },
+    { symbol: 'USDT', name: 'Tether USD', address: CONTRACT_ADDRESSES.USDT },
+    { symbol: 'FLASK', name: 'Blue Flask V2', address: CONTRACT_ADDRESSES.FLASK_TOKEN },
   ];
 
   const swapTokens = () => {
@@ -37,9 +41,43 @@ const Trade: React.FC = () => {
     setToAmount(fromAmount);
   };
 
-  const handleSwap = () => {
-    // Implement swap logic here
-    console.log('Swapping', fromAmount, fromToken.symbol, 'for', toToken.symbol);
+  const handleSwap = async () => {
+    if (!contracts || !isReady || !fromAmount || !toAmount) return;
+
+    try {
+      setIsSwapping(true);
+      
+      const path = [fromToken.address, toToken.address];
+      const amountIn = contracts.toWei(fromAmount);
+      const amountOutMin = contracts.toWei((parseFloat(toAmount) * (1 - parseFloat(slippage) / 100)).toString());
+      const deadline = contracts.getDeadline();
+
+      // Check if we need to approve tokens first
+      if (fromToken.address !== CONTRACT_ADDRESSES.WBNB) {
+        const allowance = await contracts.getAllowance(fromToken.address, CONTRACT_ADDRESSES.ROUTER);
+        if (parseFloat(contracts.fromWei(allowance)) < parseFloat(fromAmount)) {
+          await contracts.approveToken(fromToken.address, CONTRACT_ADDRESSES.ROUTER, amountIn);
+        }
+      }
+
+      // Execute swap
+      if (fromToken.address === CONTRACT_ADDRESSES.WBNB) {
+        await contracts.swapExactETHForTokens(amountOutMin, path, deadline, amountIn);
+      } else {
+        await contracts.swapExactTokensForTokens(amountIn, amountOutMin, path, deadline);
+      }
+
+      // Reset form
+      setFromAmount('');
+      setToAmount('');
+      
+      alert('Swap completed successfully!');
+    } catch (error) {
+      console.error('Swap failed:', error);
+      alert('Swap failed. Please try again.');
+    } finally {
+      setIsSwapping(false);
+    }
   };
 
   return (
@@ -129,10 +167,10 @@ const Trade: React.FC = () => {
           {/* Swap Button */}
           <button
             onClick={handleSwap}
-            disabled={!fromAmount || !toAmount}
+            disabled={!fromAmount || !toAmount || !isReady || isSwapping}
             className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold py-4 rounded-xl transition-colors"
           >
-            {!fromAmount || !toAmount ? 'Enter an amount' : 'Swap'}
+            {!isReady ? 'Connect Wallet' : isSwapping ? 'Swapping...' : !fromAmount || !toAmount ? 'Enter an amount' : 'Swap'}
           </button>
 
           {/* Common Tokens */}
