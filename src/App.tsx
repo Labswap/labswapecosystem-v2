@@ -1,25 +1,28 @@
 import React from 'react';
-import Header from './components/Header';
-import Hero from './components/Hero';
-import About from './components/About';
-import Roadmap from './components/Roadmap';
-import NFTCollection from './components/NFTCollection';
-import MarketingSolutions from './components/MarketingSolutions';
-import Whitepaper from './components/Whitepaper';
-import Footer from './components/Footer';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Navigation from './components/Navigation';
+import Dashboard from './pages/Dashboard';
+import Trade from './pages/Trade';
+import Liquidity from './pages/Liquidity';
+import Farms from './pages/Farms';
+import Staking from './pages/Staking';
+import NFTMarket from './pages/NFTMarket';
 
 function App() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-purple-900">
-      <Header />
-      <Hero />
-      <About />
-      <Roadmap />
-      <NFTCollection />
-      <MarketingSolutions />
-      <Whitepaper />
-      <Footer />
-    </div>
+    <Router>
+      <div className="min-h-screen bg-gray-900">
+        <Navigation />
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/trade" element={<Trade />} />
+          <Route path="/liquidity" element={<Liquidity />} />
+          <Route path="/farms" element={<Farms />} />
+          <Route path="/staking" element={<Staking />} />
+          <Route path="/nft" element={<NFTMarket />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 
