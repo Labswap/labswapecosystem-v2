@@ -218,7 +218,8 @@ const Farms: React.FC = () => {
                 <div>
                   <p className="text-gray-400 text-sm">FLASK Earned</p>
                   <p className="text-white font-semibold">{farm.earned}</p>
-                  <button className="text-blue-400 hover:text-blue-300 text-sm transition-colors">
+                  <button 
+                    className="text-blue-400 hover:text-blue-300 text-sm transition-colors"
                     onClick={() => handleHarvest(farm.id, parseInt(farm.id) - 1)}
                     disabled={!isReady || isLoading[farm.id]}
                   >
@@ -228,15 +229,19 @@ const Farms: React.FC = () => {
 
                 {/* Actions */}
                 <div className="flex gap-2">
-                  <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2">
+                  <button 
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
                     onClick={() => handleStake(farm.id, parseInt(farm.id) - 1)}
                     disabled={!isReady || isLoading[farm.id]}
+                  >
                     <Plus size={16} />
                     {isLoading[farm.id] ? 'Staking...' : 'Stake'}
                   </button>
+                  <button 
+                    className="bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
                     onClick={() => handleUnstake(farm.id, parseInt(farm.id) - 1)}
                     disabled={!isReady || isLoading[farm.id]}
-                  <button className="bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2">
+                  >
                     <Minus size={16} />
                     {isLoading[farm.id] ? 'Unstaking...' : 'Unstake'}
                   </button>
