@@ -96,12 +96,20 @@ const Farms: React.FC = () => {
     try {
       setIsLoading(prev => ({ ...prev, [farmId]: true }));
       
+      // Get pending rewards first to show user what they're harvesting
+      const pendingRewards = await contracts.getPendingFlask(pid);
+      
+      if (parseFloat(contracts.fromWei(pendingRewards)) === 0) {
+        alert('No rewards to harvest');
+        return;
+      }
+      
       await contracts.harvestFarm(pid);
       
-      alert('Harvest successful!');
+      alert(`Harvest successful! You received ${contracts.formatTokenAmount(pendingRewards)} FLASK`);
     } catch (error) {
       console.error('Harvest failed:', error);
-      alert('Harvest failed. Please try again.');
+      alert(`Harvest failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsLoading(prev => ({ ...prev, [farmId]: false }));
     }

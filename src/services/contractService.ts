@@ -7,9 +7,9 @@ import {
   ROUTER_ABI,
   FACTORY_ABI,
   PAIR_ABI,
-  MASTERCHEF_ABI,
-  SYRUP_BAR_ABI,
-  VAULT_ABI
+  LABSWAP_MASTERCHEF_ABI,
+  LABSWAP_SYRUP_BAR_ABI,
+  LABSWAP_VAULT_ABI
 } from '../contracts/abis';
 
 export class ContractService {
@@ -39,15 +39,15 @@ export class ContractService {
   }
 
   getMasterChefContract(): Contract {
-    return new this.web3.eth.Contract(MASTERCHEF_ABI as AbiItem[], CONTRACT_ADDRESSES.MASTERCHEF);
+    return new this.web3.eth.Contract(LABSWAP_MASTERCHEF_ABI as AbiItem[], CONTRACT_ADDRESSES.MASTERCHEF);
   }
 
   getSyrupBarContract(): Contract {
-    return new this.web3.eth.Contract(SYRUP_BAR_ABI as AbiItem[], CONTRACT_ADDRESSES.SYRUP_BAR);
+    return new this.web3.eth.Contract(LABSWAP_SYRUP_BAR_ABI as AbiItem[], CONTRACT_ADDRESSES.SYRUP_BAR);
   }
 
   getVaultContract(): Contract {
-    return new this.web3.eth.Contract(VAULT_ABI as AbiItem[], CONTRACT_ADDRESSES.VAULT);
+    return new this.web3.eth.Contract(LABSWAP_VAULT_ABI as AbiItem[], CONTRACT_ADDRESSES.VAULT);
   }
 
   // Token operations
@@ -150,21 +150,26 @@ export class ContractService {
   }
 
   // Farming operations
-  async getPoolInfo(pid: number) {
+  async getPoolInfo(pid: number): Promise<any> {
     const masterChef = this.getMasterChefContract();
     return await masterChef.methods.poolInfo(pid).call();
   }
 
-  async getUserInfo(pid: number, userAddress?: string) {
+  async getUserInfo(pid: number, userAddress?: string): Promise<any> {
     const masterChef = this.getMasterChefContract();
     const address = userAddress || this.account;
     return await masterChef.methods.userInfo(pid, address).call();
   }
 
-  async getPendingCake(pid: number, userAddress?: string): Promise<string> {
+  async getPendingFlask(pid: number, userAddress?: string): Promise<string> {
     const masterChef = this.getMasterChefContract();
     const address = userAddress || this.account;
-    return await masterChef.methods.pendingCake(pid, address).call();
+    return await masterChef.methods.pendingFlask(pid, address).call();
+  }
+
+  // Legacy method for compatibility
+  async getPendingCake(pid: number, userAddress?: string): Promise<string> {
+    return this.getPendingFlask(pid, userAddress);
   }
 
   async depositToFarm(pid: number, amount: string): Promise<string> {
@@ -179,18 +184,28 @@ export class ContractService {
 
   async harvestFarm(pid: number): Promise<string> {
     const masterChef = this.getMasterChefContract();
-    return await masterChef.methods.deposit(pid, '0').send({ from: this.account });
+    // Harvest by depositing 0 amount
+    return await masterChef.methods.deposit(pid, '0').send({ 
+      from: this.account,
+      gas: 300000 // Set gas limit for harvest operations
+    });
   }
 
   // Staking operations (Syrup Bar)
   async enterStaking(amount: string): Promise<string> {
     const syrupBar = this.getSyrupBarContract();
-    return await syrupBar.methods.enter(amount).send({ from: this.account });
+    return await syrupBar.methods.enter(amount).send({ 
+      from: this.account,
+      gas: 200000
+    });
   }
 
   async leaveStaking(shares: string): Promise<string> {
     const syrupBar = this.getSyrupBarContract();
-    return await syrupBar.methods.leave(shares).send({ from: this.account });
+    return await syrupBar.methods.leave(shares).send({ 
+      from: this.account,
+      gas: 200000
+    });
   }
 
   async getStakingBalance(userAddress?: string): Promise<string> {
@@ -202,15 +217,59 @@ export class ContractService {
   // Vault operations
   async depositToVault(amount: string): Promise<string> {
     const vault = this.getVaultContract();
-    return await vault.methods.deposit(amount).send({ from: this.account });
+    return await vault.methods.deposit(amount).send({ 
+      from: this.account,
+      gas: 300000
+    });
   }
 
   async withdrawFromVault(shares: string): Promise<string> {
     const vault = this.getVaultContract();
-    return await vault.methods.withdraw(shares).send({ from: this.account });
+    return await vault.methods.withdraw(shares).send({ 
+      from: this.account,
+      gas: 300000
+    });
+  }
+
+  async withdrawAllFromVault(): Promise<string> {
+    const vault = this.getVaultContract();
+    return await vault.methods.withdrawAll().send({ 
+      from: this.account,
+      gas: 300000
+    });
+  }
+
+  async getVaultUserInfo(userAddress?: string): Promise<any> {
+    const vault = this.getVaultContract();
+    const address = userAddress || this.account;
+    return await vault.methods.userInfo(address).call();
   }
 
   async getVaultBalance(userAddress?: string): Promise<string> {
+    const userInfo = await this.getVaultUserInfo(userAddress);
+    return userInfo.shares;
+  }
+
+  async getVaultTotalShares(): Promise<string> {
+    const vault = this.getVaultContract();
+    return await vault.methods.totalShares().call();
+  }
+
+  async getVaultAvailable(): Promise<string> {
+    const vault = this.getVaultContract();
+    return await vault.methods.available().call();
+  }
+
+  async harvestVault(): Promise<string> {
+    const vault = this.getVaultContract();
+    return await vault.methods.harvest().send({ 
+      from: this.account,
+      gas: 400000
+    });
+  }
+
+  // Legacy method for compatibility  
+  async getVaultBalance_Legacy(userAddress?: string): Promise<string> {
     const vault = this.getVaultContract();
     const address = userAddress || this.account;
     return await vault.methods.balanceOf(address).call();
@@ -218,7 +277,7 @@ export class ContractService {
 
   async getPricePerFullShare(): Promise<string> {
     const vault = this.getVaultContract();
-    return await vault.methods.getPricePerFullShare(this.account).call();
+    return await vault.methods.getPricePerFullShare().call();
   }
 
   // Utility functions
@@ -232,5 +291,32 @@ export class ContractService {
 
   getDeadline(minutes: number = 20): number {
     return Math.floor(Date.now() / 1000) + (minutes * 60);
+  }
+
+  // Gas estimation helpers
+  async estimateGas(method: any, options: any = {}): Promise<number> {
+    try {
+      const gasEstimate = await method.estimateGas({ from: this.account, ...options });
+      return Math.floor(gasEstimate * 1.2); // Add 20% buffer
+    } catch (error) {
+      console.warn('Gas estimation failed, using default:', error);
+      return 300000; // Default gas limit
+    }
+  }
+
+  // Helper to get current block number
+  async getCurrentBlock(): Promise<number> {
+    return await this.web3.eth.getBlockNumber();
+  }
+
+  // Helper to format large numbers
+  formatTokenAmount(amount: string, decimals: number = 18): string {
+    const value = parseFloat(this.fromWei(amount));
+    if (value === 0) return '0';
+    if (value < 0.0001) return '<0.0001';
+    if (value < 1) return value.toFixed(4);
+    if (value < 1000) return value.toFixed(2);
+    if (value < 1000000) return (value / 1000).toFixed(1) + 'K';
+    return (value / 1000000).toFixed(1) + 'M';
   }
 }

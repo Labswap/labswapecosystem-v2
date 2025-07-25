@@ -38,7 +38,8 @@ export const useContracts = () => {
       // Farming operations
       getPoolInfo: contractService.getPoolInfo.bind(contractService),
       getUserInfo: contractService.getUserInfo.bind(contractService),
-      getPendingCake: contractService.getPendingCake.bind(contractService),
+      getPendingFlask: contractService.getPendingFlask.bind(contractService),
+      getPendingCake: contractService.getPendingCake.bind(contractService), // Legacy compatibility
       depositToFarm: contractService.depositToFarm.bind(contractService),
       withdrawFromFarm: contractService.withdrawFromFarm.bind(contractService),
       harvestFarm: contractService.harvestFarm.bind(contractService),
@@ -51,13 +52,21 @@ export const useContracts = () => {
       // Vault operations
       depositToVault: contractService.depositToVault.bind(contractService),
       withdrawFromVault: contractService.withdrawFromVault.bind(contractService),
+      withdrawAllFromVault: contractService.withdrawAllFromVault.bind(contractService),
+      getVaultUserInfo: contractService.getVaultUserInfo.bind(contractService),
       getVaultBalance: contractService.getVaultBalance.bind(contractService),
+      getVaultTotalShares: contractService.getVaultTotalShares.bind(contractService),
+      getVaultAvailable: contractService.getVaultAvailable.bind(contractService),
+      harvestVault: contractService.harvestVault.bind(contractService),
       getPricePerFullShare: contractService.getPricePerFullShare.bind(contractService),
 
       // Utility functions
       toWei: contractService.toWei.bind(contractService),
       fromWei: contractService.fromWei.bind(contractService),
       getDeadline: contractService.getDeadline.bind(contractService),
+      estimateGas: contractService.estimateGas.bind(contractService),
+      getCurrentBlock: contractService.getCurrentBlock.bind(contractService),
+      formatTokenAmount: contractService.formatTokenAmount.bind(contractService),
     };
   }, [contractService]);
 

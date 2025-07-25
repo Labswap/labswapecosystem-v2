@@ -55,6 +55,21 @@ const Staking: React.FC = () => {
       
       const amountWei = contracts.toWei(stakeAmount);
       
+      // Check if user needs to approve FLASK tokens first
+      const allowance = await contracts.getAllowance(
+        '0x15d46b30207991425dca153d91eecaa746d57eb1', // FLASK token address
+        poolId === '1' || poolId === '2' ? '0x75488C20A8B5F8e71E74E7004C9bD75364b5e5c9' : '0x16Eb55c77baC03245daA297636AE54a8966e3b5A'
+      );
+      
+      if (parseFloat(contracts.fromWei(allowance)) < parseFloat(stakeAmount)) {
+        alert('Approving FLASK tokens...');
+        await contracts.approveToken(
+          '0x15d46b30207991425dca153d91eecaa746d57eb1',
+          poolId === '1' || poolId === '2' ? '0x75488C20A8B5F8e71E74E7004C9bD75364b5e5c9' : '0x16Eb55c77baC03245daA297636AE54a8966e3b5A',
+          amountWei
+        );
+      }
+      
       // For FLASK staking (Syrup Bar)
       if (poolId === '1' || poolId === '2') {
         await contracts.enterStaking(amountWei);
@@ -65,10 +80,10 @@ const Staking: React.FC = () => {
       
       setStakeAmount('');
       setActivePool(null);
-      alert('Staking successful!');
+      alert(`Successfully staked ${stakeAmount} FLASK!`);
     } catch (error) {
       console.error('Staking failed:', error);
-      alert('Staking failed. Please try again.');
+      alert(`Staking failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsLoading(prev => ({ ...prev, [poolId]: false }));
     }
@@ -83,17 +98,20 @@ const Staking: React.FC = () => {
       // For FLASK staking (Syrup Bar)
       if (poolId === '1' || poolId === '2') {
         const balance = await contracts.getStakingBalance();
+        if (parseFloat(contracts.fromWei(balance)) === 0) {
+          alert('No staked tokens to withdraw');
+          return;
+        }
         await contracts.leaveStaking(balance);
       } else {
-        // For other staking pools (Vault)
-        const balance = await contracts.getVaultBalance();
-        await contracts.withdrawFromVault(balance);
+        // For Vault - withdraw all
+        await contracts.withdrawAllFromVault();
       }
       
       alert('Unstaking successful!');
     } catch (error) {
       console.error('Unstaking failed:', error);
-      alert('Unstaking failed. Please try again.');
+      alert(`Unstaking failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsLoading(prev => ({ ...prev, [poolId]: false }));
     }
@@ -105,13 +123,18 @@ const Staking: React.FC = () => {
     try {
       setIsLoading(prev => ({ ...prev, [poolId]: true }));
       
-      // Harvest by staking 0 amount
-      await contracts.enterStaking('0');
+      if (poolId === '1' || poolId === '2') {
+        // For Syrup Bar - harvest by staking 0 amount
+        await contracts.enterStaking('0');
+      } else {
+        // For Vault - use harvest function
+        await contracts.harvestVault();
+      }
       
       alert('Harvest successful!');
     } catch (error) {
       console.error('Harvest failed:', error);
-      alert('Harvest failed. Please try again.');
+      alert(`Harvest failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsLoading(prev => ({ ...prev, [poolId]: false }));
     }
