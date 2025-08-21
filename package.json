@@ -10,10 +10,20 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@pancakeswap/sdk": "^5.8.14",
+    "@pancakeswap/tokens": "^0.7.5",
+    "@types/react-router-dom": "^5.3.3",
+    "@web3-react/core": "^8.2.3",
+    "@web3-react/injected-connector": "^6.0.7",
+    "@web3-react/walletconnect-connector": "^6.2.13",
     "eslint": "^8.57.1",
+    "ethers": "^6.15.0",
     "lucide-react": "^0.344.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.7.1",
+    "recharts": "^3.1.0",
+    "web3": "^4.16.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
